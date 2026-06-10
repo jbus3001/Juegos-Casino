@@ -9,7 +9,9 @@ fb.preparar_mesa()
 print("¡A perder dinero con el BlackJack!\n Cuentas con un capital base de  $1000, el pago por BlackJack es de 3:2.\n")
 
 #El juego se repetirá hasta que el jugador decida salir o se quede sin capital.
-while respuesta_jugador or capital <= 0:
+while respuesta_jugador and capital >0:
+    pidio_mano = True
+
     #Eleginos la apuesta del jugador con un minimo de $10 y un máximo de $500 por mano.
     apuesta_base = int(input("¿Cuánto deseas apostar por mano? (mínimo $10, máximo $500): "))
     while apuesta_base < 10 or apuesta_base > 500:
@@ -58,7 +60,7 @@ while respuesta_jugador or capital <= 0:
                     print(f'Cartas jugador: {jugador} \n ¿Deseas pedir otra carta? (s/n): ')
                     pidio_mano = input().lower() == 's'
             if not pidio_mano:
-                fb.plantarse(jugador,dealer,apuesta_base,capital)
+                capital = fb.plantarse(jugador,dealer,apuesta_base,capital)
                 respuesta_jugador = input("¿Deseas jugar otra mano? (s/n): ").lower() == 's'
         
 
