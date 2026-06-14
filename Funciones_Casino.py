@@ -75,12 +75,17 @@ def evaluacion_mano_dealer(mano_dealer):
 def plantarse(jugador,dealer,apuesta_base,capital):
     print("Has decidido plantarte.")
     print('La mano del dealer es: ')
-    print(evaluacion_mano_dealer(dealer))
-    if calcular_mano(dealer)[0] > 21 or calcular_mano(jugador)[0] > calcular_mano(dealer)[0]:
+    dealer_final = evaluacion_mano_dealer(dealer)
+    print(dealer_final)
+    
+    val_jugador = calcular_mano(jugador)[0]
+    val_dealer = calcular_mano(dealer_final)[0]
+
+    if val_dealer > 21 or val_jugador > val_dealer:
         print("¡Has ganado!")
         capital += apuesta_base
         print(f"Tu capital actual es: ${capital}")
-    elif calcular_mano(jugador)[0] < calcular_mano(dealer)[0]:
+    elif val_jugador < val_dealer:
         print("Has perdido.")
         capital -= apuesta_base
         print(f"Tu capital actual es: ${capital}")
