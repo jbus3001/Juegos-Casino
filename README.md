@@ -2,7 +2,7 @@
 
 Colección de scripts en Python que simulan los juegos de azar más populares de los casinos, comenzando con una implementación completa y orientada a la probabilidad del Blackjack (Veintiuna).
 
-## 🎲 Juegos Implementados
+##  Juegos Implementados
 
 ### 1. Blackjack (`Blackjack.py`)
 Un simulador de consola robusto que aplica las reglas estándar de casino y gestión de capital.
@@ -18,12 +18,12 @@ Un simulador de consola robusto que aplica las reglas estándar de casino y gest
   - **Doblar (Double Down):** Permite duplicar la apuesta a cambio de una sola carta adicional (requiere fondos suficientes).
   - **Dividir (Split):** Permite separar pares iniciales en dos manos independientes jugadas secuencialmente.
 
-## 🛠️ Estructura del Código
+##  Estructura del Código
 
 - `Blackjack.py`: Archivo principal de ejecución. Contiene el bucle del juego (Game Loop), la interfaz de terminal y la gestión de estado del jugador (capital, apuestas, selección de acciones).
 - `Funciones_Casino.py`: Módulo de lógica estocástica. Contiene el motor de cálculo de manos, la evaluación de condiciones de victoria, el autómata del *dealer* y la administración del mazo mediante la librería `random`.
 
-## 🚀 Requisitos y Ejecución
+##  Requisitos y Ejecución
 
 **Requisitos:**
 - Python 3.x (No requiere librerías externas más allá de las estándar `random` y `time`).
