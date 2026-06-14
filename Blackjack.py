@@ -1,4 +1,4 @@
-import Funciones_Casino as fb
+import Blackjack.Funciones_Blackjack as fb
 
 capital= 1000
 respuesta_jugador=True
@@ -114,6 +114,3 @@ while respuesta_jugador and capital >=0:
     else:
         print("Te has quedado sin capital. ¡Fin del juego!")
         break
-
-
-            
