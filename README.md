@@ -1,6 +1,6 @@
 # Juegos-Casino
 
-Colección de scripts en Python que simulan los juegos de azar más populares de los casinos, comenzando con una implementación completa y orientada a la probabilidad del Blackjack (Veintiuna).
+Colección de scripts en Python que simulan los juegos de azar más populares de los casinos.
 
 ##  Juegos Implementados
 
@@ -10,25 +10,39 @@ Un simulador de consola robusto que aplica las reglas estándar de casino y gest
 **Características:**
 - **Zapato Realista:** Utiliza 6 barajas (312 cartas) con punto de penetración; se baraja automáticamente cuando restan 70 cartas o menos.
 - **Gestión de Bankroll:** Sistema de apuestas con validación de liquidez. El jugador comienza con un capital de $1000 y apuestas permitidas entre $10 y $500.
-- **Reglas de Casino Puras:** - Pago de Blackjack natural a 3:2.
-  - El *dealer* debe pedir carta con un 17 suave y plantarse con 17 duro (Regla H17).
-  - Colapso dinámico del valor del As (11 a 1) al exceder los 21 puntos.
-- **Acciones del Jugador:**
-  - **Pedir / Plantarse:** Flujo continuo hasta alcanzar límite o decisión.
-  - **Doblar (Double Down):** Permite duplicar la apuesta a cambio de una sola carta adicional (requiere fondos suficientes).
-  - **Dividir (Split):** Permite separar pares iniciales en dos manos independientes jugadas secuencialmente.
+- **Reglas de Casino Puras:** Pago de Blackjack natural a 3:2. El *dealer* debe pedir carta con un 17 suave y plantarse con 17 duro (Regla H17).
+- **Acciones del Jugador:** Pedir, Plantarse, Doblar (Double Down) y Dividir (Split).
+
+### 2. Ruleta (`Ruleta.py`)
+Simulador interactivo que permite jugar en las dos variantes principales de ruleta del mundo.
+
+**Características:**
+- **Variantes Soportadas:** Ruleta Europea (un cero) y Ruleta Americana (doble cero) con sus respectivas distribuciones de colores y pagos.
+- **Tipos de Apuesta:** Soporta apuestas *Inside* (Straight Up, Split, Street, Corner, Line, Five Number) y apuestas *Outside* (Color, Par/Impar, Alto/Bajo, Docenas, Columnas).
+- **Motor de Pagos:** Cálculo automático de ganancias basado en multiplicadores reales de casino según el tipo de apuesta y el monto ingresado.
+
+### 3. Póker Texas Hold'em (`Poker_(Texas Hold'em).py`)
+Módulo base para la simulación del Póker Texas Hold'em.
+
+**Características actuales:**
+- Generación y mezcla estocástica de baraja estándar de 52 cartas con palos y valores estructurados.
+- Distribución de manos iniciales (Pre-Flop) para mesas configurables (actualmente programado para 5 jugadores).
+- Infraestructura preparada para el manejo de cartas comunitarias (Flop, Turn, River).
 
 ##  Estructura del Código
 
-- `Blackjack.py`: Archivo principal de ejecución. Contiene el bucle del juego (Game Loop), la interfaz de terminal y la gestión de estado del jugador (capital, apuestas, selección de acciones).
-- `Funciones_Casino.py`: Módulo de lógica estocástica. Contiene el motor de cálculo de manos, la evaluación de condiciones de victoria, el autómata del *dealer* y la administración del mazo mediante la librería `random`.
+- `Blackjack.py` / `Funciones_Blackjack.py`: Lógica de presentación y evaluación del juego de Blackjack.
+- `Ruleta.py` / `Funciones_Ruleta.py`: Bucle interactivo de apuestas y diccionarios de evaluación probabilística de la mesa de ruleta.
+- `Poker_(Texas Hold'em).py` / `Funciones_Poker.py`: Control de flujo para rondas de póker y manejo del estado de la baraja.
 
 ##  Requisitos y Ejecución
 
 **Requisitos:**
-- Python 3.x (No requiere librerías externas más allá de las estándar `random` y `time`).
+- Python 3.x (No requiere librerías externas; utiliza `random` y `time`).
 
 **Instrucciones:**
-Para iniciar una sesión de juego, ejecuta en tu terminal:
+Para iniciar un juego, ejecuta en terminal el archivo principal correspondiente:
 ```bash
 python Blackjack.py
+python Ruleta.py
+python "Poker_(Texas Hold'em).py"
