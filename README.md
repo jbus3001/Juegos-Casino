@@ -47,12 +47,15 @@ pip install pygame PyOpenGL
 ##  Instrucciones de Ejecución:
 
 Bash
-# Para Blackjack:
+ **Para Blackjack:** 
+ ```
 python Blackjack/Blackjack.py
-
-# Para Ruleta (Consola o GUI):
+```
+** Para Ruleta (Consola o GUI):**
+```
 python Ruleta/Ruleta.py
 python Ruleta/Ruleta_GUI.py
-
-# Para Póker:
+```
+** Para Póker:**
+```
 python "Poker/Poker_(Texas Hold'em).py"
