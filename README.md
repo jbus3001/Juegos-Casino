@@ -2,7 +2,7 @@
 
 Colección de scripts en Python que simulan los juegos de azar más populares de los casinos. Esta versión incluye simuladores de consola robustos y una nueva interfaz gráfica interactiva en 2D.
 
-## 🎲 Juegos Implementados
+##  Juegos Implementados
 
 ### 1. Blackjack (`Blackjack/Blackjack.py`)
 Un simulador de consola robusto que aplica reglas avanzadas de casino y gestión de capital.
@@ -30,23 +30,29 @@ Módulo base para la simulación del Póker Texas Hold'em.
 - Distribución de manos iniciales (Pre-Flop) para mesas configurables.
 - Funciones preparadas para el reparto de cartas comunitarias (Flop, Turn, River).
 
-## 🛠️ Estructura de Directorios
+##  Estructura de Directorios
 
 - `Blackjack/`: Lógica algorítmica y juego en consola de Veintiuna.
 - `Ruleta/`: Motor de pagos, interfaz de consola y versión gráfica interactiva (OpenGL).
 - `Poker/`: Control de flujo para rondas de póker y simulaciones de cartas.
 
-## 🚀 Requisitos y Ejecución
+##  Requisitos y Ejecución
 
 **Requisitos:**
 Para jugar las versiones de consola solo necesitas Python 3.x. Para la Ruleta GUI, instala las siguientes dependencias:
 ```bash
 pip install pygame PyOpenGL
+```
 
+##  Instrucciones de Ejecución:
 
-**Instrucciones:**
-Para iniciar un juego, ejecuta en terminal el archivo principal correspondiente:
-```bash
+Bash
+# Para Blackjack:
 python Blackjack/Blackjack.py
+
+# Para Ruleta (Consola o GUI):
 python Ruleta/Ruleta.py
+python Ruleta/Ruleta_GUI.py
+
+# Para Póker:
 python "Poker/Poker_(Texas Hold'em).py"
