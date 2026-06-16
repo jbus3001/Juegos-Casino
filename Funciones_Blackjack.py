@@ -1,6 +1,11 @@
 import random
 import time
 
+# Configuración del juego
+APUESTA_MIN = 10
+APUESTA_MAX = 500
+RE_SPLIT_MAX = 3  # máximo 3 re‑splits → 4 manos simultáneas
+
 #Preparamos un mazo de 6 barajas (312 cartas)
 tipos_cartas = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 mazo = tipos_cartas * 24
@@ -72,15 +77,16 @@ def evaluacion_mano_dealer(mano_dealer):
     return mano_dealer
 
 #Acciones jugador
-def plantarse(jugador,dealer,apuesta_base,capital):
+def plantarse(jugador, dealer, apuesta_base, capital, dealer_final=None, skip_dealer=False):
     print("Has decidido plantarte.")
-    print('La mano del dealer es: ')
-    dealer_final = evaluacion_mano_dealer(dealer)
-    print(dealer_final)
-    
+    if not skip_dealer:
+        print('La mano del dealer es: ')
+        dealer_final = evaluacion_mano_dealer(dealer)
+        print(dealer_final)
+    else:
+        dealer_final = dealer  
     val_jugador = calcular_mano(jugador)[0]
     val_dealer = calcular_mano(dealer_final)[0]
-
     if val_dealer > 21 or val_jugador > val_dealer:
         print("¡Has ganado!")
         capital += apuesta_base
@@ -93,3 +99,80 @@ def plantarse(jugador,dealer,apuesta_base,capital):
         print("Empate.")
         print(f"Tu capital actual es: ${capital}")
     return capital
+
+def pedir_carta_jugador(jugador, dealer, apuesta_base, capital):
+    print("Has decidido pedir una carta.")
+    pidio_mano = True
+    while pidio_mano and calcular_mano(jugador)[0] <= 21:
+        jugador = dar_carta_jugador(jugador)
+        if calcular_mano(jugador)[0] > 21:
+            capital -= apuesta_base
+            print(f'Cartas jugador: {jugador} \n ¡Has perdido! Tu capital actual es: ${capital}')
+            break
+        elif calcular_mano(jugador)[0] == 21:
+            print(f'Cartas jugador: {jugador} \n ¡Tienes 21!')
+            capital = plantarse(jugador, dealer, apuesta_base, capital)
+            break
+        else:
+            print(f'Cartas jugador: {jugador} \n ¿Deseas pedir otra carta? (s/n): ')
+            pidio_mano = input().lower() == 's'
+    if not pidio_mano and calcular_mano(jugador)[0] < 21:
+        capital = plantarse(jugador, dealer, apuesta_base, capital)
+    return jugador, capital
+
+def doblar_apuesta_jugador(jugador, dealer, apuesta_base, capital):
+    print("Has decidido doblar tu apuesta.")
+    nueva_apuesta = apuesta_base * 2
+    jugador = dar_carta_jugador(jugador)
+    print(f'Cartas jugador (doblado): {jugador}')
+    if calcular_mano(jugador)[0] > 21:
+        capital -= nueva_apuesta
+        print(f'¡Has perdido! Tu capital actual es: ${capital}')
+    else:
+        capital = plantarse(jugador, dealer, nueva_apuesta, capital)
+    return jugador, capital
+
+def dividir_mano_jugador(jugador, dealer, apuesta_base, capital):
+    print("Has decidido dividir tu mano.")
+    mano1 = [jugador[0], obtener_carta()]
+    mano2 = [jugador[1], obtener_carta()]
+    capital -= apuesta_base
+    print(f"Se ha descontado una apuesta extra de ${apuesta_base}. Capital actual: ${capital}")
+    return mano1, mano2, capital
+
+#Funciones de ayuda para seguro y rendición temprana
+def ofrecer_seguro(apuesta_base, capital):
+    respuesta = input("El dealer muestra un As. ¿Quieres comprar seguro (s/n)? ").lower()
+    if respuesta == 's':
+        seguro = apuesta_base // 2
+        if seguro > capital:
+            seguro = capital
+        capital -= seguro
+        print(f"Has comprado seguro por ${seguro}.")
+        return seguro, capital
+    return 0, capital
+
+def resolver_seguro(seguro, dealer, capital):
+    valor_dealer, _ = calcular_mano(dealer)
+    if valor_dealer == 21:
+        ganancia = seguro * 2
+        capital += ganancia
+        print(f"¡Seguro ganado! Recibes ${ganancia}. Tu capital es ahora ${capital}.")
+    else:
+        print("Seguro perdido.")
+    return capital
+
+def rendirse_early(apuesta_base, capital):
+    devolucion = apuesta_base // 2
+    capital += devolucion
+    print(f"Has rendido. Recuperas la mitad de la apuesta: ${devolucion}. Tu capital actual es: ${capital}")
+    return capital
+
+# Función para re‑mezclar la shoe si quedan menos del 15% de cartas
+def rebalancear_si_necesario():
+    total_cartas = len(tipos_cartas) * 24
+    if len(mazo) < 0.15 * total_cartas:
+        print("Recreando la shoe (menos del 15 % de cartas restante).")
+        nuevo_mazo()
+    barajas_restantes = len(mazo) // 52
+    print(f"Barajas restantes: {barajas_restantes}")
