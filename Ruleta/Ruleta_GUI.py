@@ -22,70 +22,6 @@ STATE_RESULT = 3
 SEQ_EUROPEA = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26]
 SEQ_AMERICANA = [0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1, '00', 27, 10, 25, 29, 12, 8, 19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2]
 
-def generar_textura_ruleta(tipo):
-    size = 400
-    surface = pygame.Surface((size, size), pygame.SRCALPHA)
-    cx, cy = size//2, size//2
-    radius = size//2
-    
-    seq = SEQ_AMERICANA if tipo == "Americana" else SEQ_EUROPEA
-    segmentos = len(seq)
-    angulo_por_segmento = 360.0 / segmentos
-    
-    try:
-        font = pygame.font.SysFont("Arial", 16, bold=True)
-    except:
-        font = pygame.font.Font(None, 20)
-        
-    for i, num in enumerate(seq):
-        start_angle = math.radians(i * angulo_por_segmento)
-        end_angle = math.radians((i + 1) * angulo_por_segmento)
-        
-        if num == 0 or num == '00':
-            color = (20, 180, 20) # Verde
-        else:
-            dic = fr.ruleta_americana if tipo == "Americana" else fr.ruleta_europea
-            c = dic[num]
-            if c == "rojo": color = (200, 20, 20)
-            elif c == "negro": color = (20, 20, 20)
-            
-        # Dibujar poligono del segmento
-        points = [(cx, cy)]
-        steps = 10
-        for s in range(steps + 1):
-            a = start_angle + (end_angle - start_angle) * (s / steps)
-            x = cx + math.cos(a) * radius
-            y = cy + math.sin(a) * radius
-            points.append((x, y))
-            
-        pygame.draw.polygon(surface, color, points)
-        pygame.draw.polygon(surface, (255, 255, 255), points, 1) # Borde blanco fino
-        
-        # Rotar y dibujar el texto
-        mid_angle_deg = i * angulo_por_segmento + angulo_por_segmento / 2
-        mid_angle_rad = math.radians(mid_angle_deg)
-        
-        text_surf = font.render(str(num), True, (255, 255, 255))
-        rotated_text = pygame.transform.rotate(text_surf, -mid_angle_deg)
-        
-        text_radius = radius * 0.85 # Ubicar cerca del borde
-        tx = cx + math.cos(mid_angle_rad) * text_radius
-        ty = cy + math.sin(mid_angle_rad) * text_radius
-        
-        rect = rotated_text.get_rect(center=(tx, ty))
-        surface.blit(rotated_text, rect)
-        
-    # Convertir a textura de OpenGL (sin voltear para que coincida con el eje Y invertido de gluOrtho2D)
-    texture_data = pygame.image.tostring(surface, "RGBA", False)
-    
-    tex_id = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, tex_id)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
-    
-    return tex_id
-
 class RuletaGame:
     def __init__(self):
         pygame.init()
@@ -97,17 +33,19 @@ class RuletaGame:
         gluOrtho2D(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0)
         glMatrixMode(GL_MODELVIEW)
         
-        # Generar texturas de las dos ruletas
-        self.tex_americana = generar_textura_ruleta("Americana")
-        self.tex_europea = generar_textura_ruleta("Europea")
-        
         self.clock = pygame.time.Clock()
         try:
             self.font = pygame.font.SysFont("Arial", 24)
             self.large_font = pygame.font.SysFont("Arial", 48)
+            self.number_font = pygame.font.SysFont("Arial", 16, bold=True)
         except:
             self.font = pygame.font.Font(None, 24)
             self.large_font = pygame.font.Font(None, 48)
+            self.number_font = pygame.font.Font(None, 20)
+        
+        # Generar texturas de los números
+        self.texturas_numeros = {}
+        self.init_ruleta()
         
         self.state = STATE_MENU
         self.tipo_ruleta = "Europea"
@@ -122,7 +60,29 @@ class RuletaGame:
         self.velocidad_giro = 0.0
         
         self.run()
-        
+
+    def init_ruleta(self):
+        """Inicializa las texturas individuales para cada número de la ruleta."""
+        numeros = set(SEQ_EUROPEA + SEQ_AMERICANA)
+        for num in numeros:
+            text_surf = self.number_font.render(str(num), True, (255, 255, 255))
+            text_data = pygame.image.tostring(text_surf, "RGBA", True)
+            w, h = text_surf.get_size()
+            
+            tex_id = glGenTextures(1)
+            glBindTexture(GL_TEXTURE_2D, tex_id)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
+            
+            self.texturas_numeros[num] = (tex_id, w, h)
+
+    def cambiar_tipo_ruleta(self, nuevo_tipo):
+        """Modularización del cambio de tipo de ruleta"""
+        self.tipo_ruleta = nuevo_tipo
+        self.state = STATE_BOARD
+        self.timer_start = pygame.time.get_ticks()
+
     def draw_text(self, x, y, text, color=(255, 255, 255), center=False, large=False):
         font = self.large_font if large else self.font
         text_surface = font.render(text, True, color, (0, 0, 0, 0))
@@ -150,18 +110,98 @@ class RuletaGame:
         glVertex2f(x+w, y+h)
         glVertex2f(x, y+h)
         glEnd()
+
+    def dibujar_ruleta_opengl(self, cx, cy, radius):
+        """Dibuja la ruleta usando primitivas de OpenGL (GL_POLYGON, GL_LINE_STRIP)"""
+        seq = SEQ_AMERICANA if self.tipo_ruleta == "Americana" else SEQ_EUROPEA
+        segmentos = len(seq)
+        angulo_por_segmento = 360.0 / segmentos
         
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        # Dibujar cuñas de la ruleta
+        for i, num in enumerate(seq):
+            start_angle = math.radians(i * angulo_por_segmento)
+            end_angle = math.radians((i + 1) * angulo_por_segmento)
+            
+            if num == 0 or num == '00':
+                glColor3f(20/255.0, 180/255.0, 20/255.0) # Verde
+            else:
+                dic = fr.ruleta_americana if self.tipo_ruleta == "Americana" else fr.ruleta_europea
+                c = dic[num]
+                if c == "rojo": glColor3f(200/255.0, 20/255.0, 20/255.0)
+                elif c == "negro": glColor3f(20/255.0, 20/255.0, 20/255.0)
+                
+            # Usar GL_POLYGON para el segmento curvo
+            glBegin(GL_POLYGON)
+            glVertex2f(cx, cy)
+            steps = 10
+            for s in range(steps + 1):
+                a = start_angle + (end_angle - start_angle) * (s / steps)
+                x = cx + math.cos(a) * radius
+                y = cy + math.sin(a) * radius
+                glVertex2f(x, y)
+            glEnd()
+            
+            # Dibujar borde blanco
+            glColor3f(1.0, 1.0, 1.0)
+            glBegin(GL_LINE_STRIP)
+            for s in range(steps + 1):
+                a = start_angle + (end_angle - start_angle) * (s / steps)
+                x = cx + math.cos(a) * radius
+                y = cy + math.sin(a) * radius
+                glVertex2f(x, y)
+            glEnd()
+            glBegin(GL_LINES)
+            glVertex2f(cx, cy)
+            glVertex2f(cx + math.cos(start_angle) * radius, cy + math.sin(start_angle) * radius)
+            glEnd()
+
+        # Dibujar texturas de los números
+        glEnable(GL_TEXTURE_2D)
+        glColor3f(1.0, 1.0, 1.0)
+        
+        text_radius = radius * 0.85
+        for i, num in enumerate(seq):
+            mid_angle_deg = i * angulo_por_segmento + angulo_por_segmento / 2
+            mid_angle_rad = math.radians(mid_angle_deg)
+            
+            tx = cx + math.cos(mid_angle_rad) * text_radius
+            ty = cy + math.sin(mid_angle_rad) * text_radius
+            
+            tex_id, w, h = self.texturas_numeros[num]
+            glBindTexture(GL_TEXTURE_2D, tex_id)
+            
+            glPushMatrix()
+            glTranslatef(tx, ty, 0)
+            # Rotar el quad para que el texto apunte hacia afuera del círculo
+            glRotatef(mid_angle_deg + 90, 0, 0, 1)
+            
+            # Dibujar el quad centrado
+            glBegin(GL_QUADS)
+            glTexCoord2f(0.0, 1.0); glVertex2f(-w/2, -h/2)
+            glTexCoord2f(1.0, 1.0); glVertex2f(w/2, -h/2)
+            glTexCoord2f(1.0, 0.0); glVertex2f(w/2, h/2)
+            glTexCoord2f(0.0, 0.0); glVertex2f(-w/2, h/2)
+            glEnd()
+            
+            glPopMatrix()
+            
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_BLEND)
+
     def draw_menu(self):
         self.draw_text(WINDOW_WIDTH//2, 80, "¡Bienvenido al juego de la Ruleta!", (255,255,255), center=True, large=True)
         self.draw_text(WINDOW_WIDTH//2, 140, "Selecciona el tipo de ruleta que quieras jugar:", (255,255,255), center=True)
         
         # Boton Americana
         self.draw_rect(200, 250, 400, 80, (0.8, 0.0, 0.0))
-        self.draw_text(WINDOW_WIDTH//2, 290, "RULETA AMERICANA", (0,0,0), center=True)
+        self.draw_text(WINDOW_WIDTH//2, 290, "RULETA AMERICANA", (255,255,255), center=True)
         
         # Boton Europea
         self.draw_rect(200, 400, 400, 80, (0.8, 0.0, 0.0))
-        self.draw_text(WINDOW_WIDTH//2, 440, "RULETA EUROPEA", (0,0,0), center=True)
+        self.draw_text(WINDOW_WIDTH//2, 440, "RULETA EUROPEA", (255,255,255), center=True)
         
     def draw_board(self):
         self.draw_text(20, 20, f"Capital: ${self.capital}", (255,255,0))
@@ -201,32 +241,17 @@ class RuletaGame:
         cx, cy = WINDOW_WIDTH//2, WINDOW_HEIGHT//2
         radius = 200
         
-        # Habilitar texturas y transparencia
-        glEnable(GL_TEXTURE_2D)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        
-        tex = self.tex_americana if self.tipo_ruleta == "Americana" else self.tex_europea
-        glBindTexture(GL_TEXTURE_2D, tex)
-        
         glPushMatrix()
         glTranslatef(cx, cy, 0)
         glRotatef(self.angulo_ruleta, 0, 0, 1)
+        glTranslatef(-cx, -cy, 0)
         
-        glColor3f(1.0, 1.0, 1.0) # Color blanco puro para no teñir la textura
-        glBegin(GL_QUADS)
-        glTexCoord2f(0.0, 0.0); glVertex2f(-radius, -radius)
-        glTexCoord2f(1.0, 0.0); glVertex2f(radius, -radius)
-        glTexCoord2f(1.0, 1.0); glVertex2f(radius, radius)
-        glTexCoord2f(0.0, 1.0); glVertex2f(-radius, radius)
-        glEnd()
+        self.dibujar_ruleta_opengl(cx, cy, radius)
         
         glPopMatrix()
         
-        glDisable(GL_BLEND)
-        glDisable(GL_TEXTURE_2D)
-        
-        # Dibujar marcador superior apuntando al número ganador
+        # Dibujar marcador superior estático apuntando al número ganador
+        # El marcador estará en el norte (cy - radius)
         glColor3f(1.0, 1.0, 1.0)
         glBegin(GL_TRIANGLES)
         glVertex2f(cx, cy - radius - 5)
@@ -250,22 +275,19 @@ class RuletaGame:
         x, y = pos
         if 200 <= x <= 600:
             if 250 <= y <= 330:
-                self.tipo_ruleta = "Americana"
-                self.state = STATE_BOARD
-                self.timer_start = pygame.time.get_ticks()
+                self.cambiar_tipo_ruleta("Americana")
             elif 400 <= y <= 480:
-                self.tipo_ruleta = "Europea"
-                self.state = STATE_BOARD
-                self.timer_start = pygame.time.get_ticks()
+                self.cambiar_tipo_ruleta("Europea")
 
     def girar_ruleta(self):
+        """Calcula el angulo objetivo del giro garantizando que el numero seleccionado
+        quede alineado con la flecha superior"""
         self.capital -= self.monto_apostado 
         self.state = STATE_SPINNING
         
         dic_ruleta = fr.ruleta_americana if self.tipo_ruleta == "Americana" else fr.ruleta_europea
         self.resultado_giro = random.choice(list(dic_ruleta.keys()))
         
-        # Calcular matematica para que la ruleta se detenga en el número ganador
         seq = SEQ_AMERICANA if self.tipo_ruleta == "Americana" else SEQ_EUROPEA
         idx = seq.index(self.resultado_giro)
         
@@ -273,22 +295,22 @@ class RuletaGame:
         angulo_por_segmento = 360.0 / segmentos
         mid_angle = idx * angulo_por_segmento + angulo_por_segmento / 2
         
-        # El marcador está en 270 grados (arriba)
+        # El marcador está en "arriba", es decir angulo -90 (o 270) en coordenadas matematicas
+        # La rotación de OpenGL es en sentido antihorario. 
+        # Si sumamos angulo_ruleta a mid_angle, el número estará en mid_angle + angulo_ruleta.
+        # Queremos que (mid_angle + angulo_ruleta) % 360 = 270 (posición superior de la ruleta)
         target_angle = 270 - mid_angle
         
         current_angle_mod = self.angulo_ruleta % 360
         distancia = target_angle - current_angle_mod
         if distancia < 0:
             distancia += 360
-        distancia += 360 * 4 # 4 vueltas completas extra para darle emocion
+        distancia += 360 * 4 # 4 vueltas completas extra
         
-        # En una serie donde v *= 0.985, la suma total (distancia) es v0 / (1 - 0.985) = v0 / 0.015
-        # Añadimos + 0.1 para compensar el corte manual del bucle cuando v < 0.1
         self.velocidad_giro = distancia * 0.015 + 0.1
 
     def handle_click_board(self, pos):
         x, y = pos
-        # Seleccion de apuestas básicas de $10 por clic
         if 200 <= x <= 380 and 250 <= y <= 350:
             self.apuesta_actual = {"tipo": "Color", "detalle": "rojo"}
             self.monto_apostado = 10.0 if self.capital >= 10 else self.capital
@@ -302,14 +324,13 @@ class RuletaGame:
             self.apuesta_actual = {"tipo": "ParImpar", "detalle": "impar"}
             self.monto_apostado = 10.0 if self.capital >= 10 else self.capital
             
-        # Boton Finalizar apuestas
         if self.apuesta_actual and self.monto_apostado > 0:
             if 550 <= x <= 770 and 500 <= y <= 560:
                 self.girar_ruleta()
 
     def update_spinning(self):
         self.angulo_ruleta += self.velocidad_giro
-        self.velocidad_giro *= 0.985 # Frenado progresivo
+        self.velocidad_giro *= 0.985
         
         if self.velocidad_giro < 0.1:
             self.velocidad_giro = 0
@@ -341,7 +362,7 @@ class RuletaGame:
                         self.handle_click_board(event.pos)
                     elif self.state == STATE_RESULT:
                         if self.capital <= 0:
-                            running = False # Fin del juego
+                            running = False
                         else:
                             self.apuesta_anterior = self.apuesta_actual
                             self.apuesta_actual = None
@@ -349,7 +370,6 @@ class RuletaGame:
                             self.state = STATE_BOARD
                             self.timer_start = pygame.time.get_ticks()
             
-            # Actualizar logica
             if self.state == STATE_BOARD:
                 time_elapsed = (pygame.time.get_ticks() - self.timer_start) // 1000
                 if time_elapsed >= 15:
@@ -364,8 +384,7 @@ class RuletaGame:
             elif self.state == STATE_SPINNING:
                 self.update_spinning()
                 
-            # Renderizado
-            glClearColor(0.0, 0.0, 0.8, 1.0) # Fondo azul
+            glClearColor(0.0, 0.0, 0.8, 1.0)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             
             if self.state == STATE_MENU:
